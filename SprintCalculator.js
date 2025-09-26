@@ -1,299 +1,473 @@
-import React, { useState, useMemo } from 'react';
-import { Calculator, Users, Clock, Target, DollarSign } from 'lucide-react';
+// Calculadora de Proyecto Scrum
+class ScrumCalculator {
+    constructor() {
+        this.initializeElements();
+        this.addEventListeners();
+        this.calculate(); // Cálculo inicial
+    }
 
-const ScrumCalculator = () => {
-  const [params, setParams] = useState({
-    horasPorPunto: 4,
-    diasSprint: 14,
-    diasPorSemana: 5,
-    numeroPersonas: 5,
-    puntosProyecto: 100,
-    horasTrabajoporDia: 6,
-    costoHoraPorPersona: 25
-  });
+    initializeElements() {
+        // Inputs
+        this.inputs = {
+            horasPorPunto: document.getElementById('horasPorPunto'),
+            diasSprint: document.getElementById('diasSprint'),
+            diasPorSemana: document.getElementById('diasPorSemana'),
+            numeroPersonas: document.getElementById('numeroPersonas'),
+            horasTrabajoporDia: document.getElementById('horasTrabajoporDia'),
+            puntosProyecto: document.getElementById('puntosProyecto'),
+            costoHoraPorPersona: document.getElementById('costoHoraPorPersona')
+        };
 
-  const calculations = useMemo(() => {
-    const {
-      horasPorPunto,
-      diasSprint,
-      diasPorSemana,
-      numeroPersonas,
-      puntosProyecto,
-      horasTrabajoporDia,
-      costoHoraPorPersona
-    } = params;
+        // Elementos de resultado
+        this.resultElements = {
+            tiempoPorPunto: document.getElementById('tiempoPorPunto'),
+            duracionSprint: document.getElementById('duracionSprint'),
+            diasLaborables: document.getElementById('diasLaborables'),
+            diasSemanales: document.getElementById('diasSemanales'),
+            tamanoEquipo: document.getElementById('tamanoEquipo'),
+            totalPuntos: document.getElementById('totalPuntos'),
+            capacidadSprint: document.getElementById('capacidadSprint'),
+            horasEfectivas: document.getElementById('horasEfectivas'),
+            velocidadEquipo: document.getElementById('velocidadEquipo'),
+            sprintsNecesarios: document.getElementById('sprintsNecesarios'),
+            duracionProyecto: document.getElementById('duracionProyecto'),
+            duracionDetalle: document.getElementById('duracionDetalle'),
+            costoTotal: document.getElementById('costoTotal'),
+            horasTotales: document.getElementById('horasTotales'),
+            resumenEjecutivo: document.getElementById('resumenEjecutivo')
+        };
+    }
 
-    // Días de trabajo por sprint
-    const diasTrabajoPorSprint = Math.floor((diasSprint / 7) * diasPorSemana);
-    
-    // Capacidad total de horas por sprint
-    const horasTotalesPorSprint = diasTrabajoPorSprint * numeroPersonas * horasTrabajoporDia;
-    
-    // Considerando factor de eficiencia (80% del tiempo efectivo en desarrollo)
-    const factorEficiencia = 0.8;
-    const horasEfectivasPorSprint = horasTotalesPorSprint * factorEficiencia;
-    
-    // Capacidad en puntos por sprint
-    const capacidadPuntosPorSprint = Math.floor(horasEfectivasPorSprint / horasPorPunto);
-    
-    // Velocidad del equipo (similar a capacidad en este caso)
-    const velocidadEquipo = capacidadPuntosPorSprint;
-    
-    // Número de sprints necesarios
-    const numeroSprints = Math.ceil(puntosProyecto / velocidadEquipo);
-    
-    // Duración total del proyecto en días
-    const duracionProyectoDias = numeroSprints * diasSprint;
-    const duracionProyectoSemanas = Math.ceil(duracionProyectoDias / 7);
-    const duracionProyectoMeses = Math.ceil(duracionProyectoSemanas / 4);
-    
-    // Costo total del proyecto
-    const horasTotalesProyecto = puntosProyecto * horasPorPunto;
-    const costoTotal = horasTotalesProyecto * costoHoraPorPersona;
+    addEventListeners() {
+        // Agregar event listeners a todos los inputs
+        Object.values(this.inputs).forEach(input => {
+            input.addEventListener('input', () => this.calculate());
+            input.addEventListener('change', () => this.calculate());
+        });
+    }
 
+    getInputValues() {
+        return {
+            horasPorPunto: parseFloat(this.inputs.horasPorPunto.value) || 0,
+            diasSprint: parseInt(this.inputs.diasSprint.value) || 0,
+            diasPorSemana: parseInt(this.inputs.diasPorSemana.value) || 0,
+            numeroPersonas: parseInt(this.inputs.numeroPersonas.value) || 0,
+            horasTrabajoporDia: parseFloat(this.inputs.horasTrabajoporDia.value) || 0,
+            puntosProyecto: parseInt(this.inputs.puntosProyecto.value) || 0,
+            costoHoraPorPersona: parseFloat(this.inputs.costoHoraPorPersona.value) || 0
+        };
+    }
+
+    calculate() {
+        const params = this.getInputValues();
+        
+        // Validar que los valores sean positivos
+        if (Object.values(params).some(val => val <= 0)) {
+            this.displayError();
+            return;
+        }
+
+        const calculations = this.performCalculations(params);
+        this.updateDisplay(params, calculations);
+    }
+
+    performCalculations(params) {
+        const {
+            horasPorPunto,
+            diasSprint,
+            diasPorSemana,
+            numeroPersonas,
+            horasTrabajoporDia,
+            puntosProyecto,
+            costoHoraPorPersona
+        } = params;
+
+        // Días de trabajo por sprint
+        const diasTrabajoPorSprint = Math.floor((diasSprint / 7) * diasPorSemana);
+        
+        // Capacidad total de horas por sprint
+        const horasTotalesPorSprint = diasTrabajoPorSprint * numeroPersonas * horasTrabajoporDia;
+        
+        // Factor de eficiencia (80% del tiempo efectivo en desarrollo)
+        const factorEficiencia = 0.8;
+        const horasEfectivasPorSprint = Math.round(horasTotalesPorSprint * factorEficiencia);
+        
+        // Capacidad en puntos por sprint
+        const capacidadPuntosPorSprint = Math.floor(horasEfectivasPorSprint / horasPorPunto);
+        
+        // Velocidad del equipo (similar a capacidad)
+        const velocidadEquipo = capacidadPuntosPorSprint;
+        
+        // Número de sprints necesarios
+        const numeroSprints = Math.ceil(puntosProyecto / velocidadEquipo);
+        
+        // Duración total del proyecto
+        const duracionProyectoDias = numeroSprints * diasSprint;
+        const duracionProyectoSemanas = Math.ceil(duracionProyectoDias / 7);
+        const duracionProyectoMeses = Math.ceil(duracionProyectoSemanas / 4);
+        
+        // Costo total del proyecto
+        const horasTotalesProyecto = puntosProyecto * horasPorPunto;
+        const costoTotal = horasTotalesProyecto * costoHoraPorPersona;
+
+        return {
+            diasTrabajoPorSprint,
+            horasTotalesPorSprint,
+            horasEfectivasPorSprint,
+            capacidadPuntosPorSprint,
+            velocidadEquipo,
+            numeroSprints,
+            duracionProyectoDias,
+            duracionProyectoSemanas,
+            duracionProyectoMeses,
+            horasTotalesProyecto,
+            costoTotal
+        };
+    }
+
+    updateDisplay(params, calculations) {
+        // Actualizar valores directos
+        this.resultElements.tiempoPorPunto.textContent = `${params.horasPorPunto} horas`;
+        this.resultElements.duracionSprint.textContent = `${params.diasSprint} días`;
+        this.resultElements.diasLaborables.textContent = `${calculations.diasTrabajoPorSprint} días laborables`;
+        this.resultElements.diasSemanales.textContent = `${params.diasPorSemana} días`;
+        this.resultElements.tamanoEquipo.textContent = `${params.numeroPersonas} personas`;
+        this.resultElements.totalPuntos.textContent = `${params.puntosProyecto} puntos`;
+
+        // Actualizar valores calculados
+        this.resultElements.capacidadSprint.textContent = `${calculations.capacidadPuntosPorSprint} puntos`;
+        this.resultElements.horasEfectivas.textContent = `${calculations.horasEfectivasPorSprint} horas efectivas`;
+        this.resultElements.velocidadEquipo.textContent = `${calculations.velocidadEquipo} puntos/sprint`;
+        this.resultElements.sprintsNecesarios.textContent = `${calculations.numeroSprints} sprints`;
+        
+        // Duración del proyecto
+        this.resultElements.duracionProyecto.textContent = `${calculations.duracionProyectoMeses} meses`;
+        this.resultElements.duracionDetalle.textContent = 
+            `${calculations.duracionProyectoSemanas} semanas (${calculations.duracionProyectoDias} días)`;
+        
+        // Costo
+        this.resultElements.costoTotal.textContent = `$${this.formatNumber(calculations.costoTotal)}`;
+        this.resultElements.horasTotales.textContent = `${calculations.horasTotalesProyecto} horas totales`;
+
+        // Actualizar resumen ejecutivo
+        this.updateExecutiveSummary(params, calculations);
+    }
+
+    updateExecutiveSummary(params, calculations) {
+        const summary = `
+            <p>• El proyecto requiere <strong>${calculations.numeroSprints} sprints</strong> de ${params.diasSprint} días cada uno</p>
+            <p>• Duración total estimada: <strong>${calculations.duracionProyectoMeses} meses</strong></p>
+            <p>• Capacidad del equipo: <strong>${calculations.capacidadPuntosPorSprint} puntos por sprint</strong></p>
+            <p>• Costo total estimado: <strong>$${this.formatNumber(calculations.costoTotal)}</strong></p>
+            <p>• Factor de eficiencia aplicado: <strong>80%</strong> (tiempo efectivo en desarrollo)</p>
+        `;
+        this.resultElements.resumenEjecutivo.innerHTML = summary;
+    }
+
+    displayError() {
+        // Mostrar mensaje de error si hay valores inválidos
+        Object.values(this.resultElements).forEach(element => {
+            if (element && element.id !== 'resumenEjecutivo') {
+                element.textContent = '--';
+            }
+        });
+        
+        if (this.resultElements.resumenEjecutivo) {
+            this.resultElements.resumenEjecutivo.innerHTML = 
+                '<p style="color: #fbbf24;">⚠️ Por favor, ingresa valores válidos en todos los campos.</p>';
+        }
+    }
+
+    formatNumber(number) {
+        return new Intl.NumberFormat('en-US').format(Math.round(number));
+    }
+}
+
+// Utilidades adicionales
+class ScrumUtils {
+    static validatePositiveNumber(value) {
+        const num = parseFloat(value);
+        return !isNaN(num) && num > 0;
+    }
+
+    static addInputValidation(inputElement, validationFn) {
+        inputElement.addEventListener('blur', function() {
+            if (!validationFn(this.value)) {
+                this.style.borderColor = '#ef4444';
+                this.style.backgroundColor = '#fef2f2';
+            } else {
+                this.style.borderColor = '#d1d5db';
+                this.style.backgroundColor = 'white';
+            }
+        });
+    }
+
+    static exportResults(calculator) {
+        const params = calculator.getInputValues();
+        const calculations = calculator.performCalculations(params);
+        
+        const exportData = {
+            parametros: params,
+            resultados: calculations,
+            fechaExportacion: new Date().toISOString(),
+            resumen: {
+                sprints: calculations.numeroSprints,
+                duracionMeses: calculations.duracionProyectoMeses,
+                capacidadPorSprint: calculations.capacidadPuntosPorSprint,
+                costoTotal: calculations.costoTotal
+            }
+        };
+        
+        return JSON.stringify(exportData, null, 2);
+    }
+}
+
+// Funciones de utilidad para exportar datos
+function exportToJSON() {
+    const data = ScrumUtils.exportResults(scrumCalculator);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `scrum-calculation-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function exportToCSV() {
+    const params = scrumCalculator.getInputValues();
+    const calculations = scrumCalculator.performCalculations(params);
+    
+    const csvData = [
+        ['Parámetro', 'Valor', 'Unidad'],
+        ['Horas por punto', params.horasPorPunto, 'horas'],
+        ['Días por sprint', params.diasSprint, 'días'],
+        ['Días por semana', params.diasPorSemana, 'días'],
+        ['Número de personas', params.numeroPersonas, 'personas'],
+        ['Horas por día', params.horasTrabajoporDia, 'horas'],
+        ['Puntos del proyecto', params.puntosProyecto, 'puntos'],
+        ['Costo por hora', params.costoHoraPorPersona, 'USD'],
+        [''],
+        ['Resultado', 'Valor', 'Unidad'],
+        ['Capacidad por sprint', calculations.capacidadPuntosPorSprint, 'puntos'],
+        ['Velocidad del equipo', calculations.velocidadEquipo, 'puntos/sprint'],
+        ['Sprints necesarios', calculations.numeroSprints, 'sprints'],
+        ['Duración del proyecto', calculations.duracionProyectoMeses, 'meses'],
+        ['Costo total', calculations.costoTotal, 'USD']
+    ];
+    
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `scrum-calculation-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function printResults() {
+    window.print();
+}
+
+// Funciones para preset de configuraciones comunes
+function loadSmallTeamPreset() {
+    scrumCalculator.inputs.horasPorPunto.value = 4;
+    scrumCalculator.inputs.diasSprint.value = 14;
+    scrumCalculator.inputs.diasPorSemana.value = 5;
+    scrumCalculator.inputs.numeroPersonas.value = 3;
+    scrumCalculator.inputs.horasTrabajoporDia.value = 6;
+    scrumCalculator.inputs.puntosProyecto.value = 50;
+    scrumCalculator.inputs.costoHoraPorPersona.value = 20;
+    scrumCalculator.calculate();
+}
+
+function loadMediumTeamPreset() {
+    scrumCalculator.inputs.horasPorPunto.value = 4;
+    scrumCalculator.inputs.diasSprint.value = 14;
+    scrumCalculator.inputs.diasPorSemana.value = 5;
+    scrumCalculator.inputs.numeroPersonas.value = 5;
+    scrumCalculator.inputs.horasTrabajoporDia.value = 6;
+    scrumCalculator.inputs.puntosProyecto.value = 100;
+    scrumCalculator.inputs.costoHoraPorPersona.value = 25;
+    scrumCalculator.calculate();
+}
+
+function loadLargeTeamPreset() {
+    scrumCalculator.inputs.horasPorPunto.value = 5;
+    scrumCalculator.inputs.diasSprint.value = 14;
+    scrumCalculator.inputs.diasPorSemana.value = 5;
+    scrumCalculator.inputs.numeroPersonas.value = 8;
+    scrumCalculator.inputs.horasTrabajoporDia.value = 6;
+    scrumCalculator.inputs.puntosProyecto.value = 200;
+    scrumCalculator.inputs.costoHoraPorPersona.value = 30;
+    scrumCalculator.calculate();
+}
+
+// Funciones de análisis adicionales
+function analyzeProjectRisk() {
+    const params = scrumCalculator.getInputValues();
+    const calculations = scrumCalculator.performCalculations(params);
+    
+    let riskLevel = 'Bajo';
+    let riskFactors = [];
+    
+    // Análisis de factores de riesgo
+    if (calculations.numeroSprints > 10) {
+        riskLevel = 'Alto';
+        riskFactors.push('Proyecto de larga duración (>10 sprints)');
+    }
+    
+    if (params.numeroPersonas > 7) {
+        riskLevel = 'Medio';
+        riskFactors.push('Equipo grande (>7 personas)');
+    }
+    
+    if (params.puntosProyecto > 150) {
+        riskLevel = 'Alto';
+        riskFactors.push('Proyecto de alta complejidad (>150 puntos)');
+    }
+    
+    if (calculations.capacidadPuntosPorSprint < 10) {
+        riskLevel = 'Medio';
+        riskFactors.push('Baja capacidad por sprint (<10 puntos)');
+    }
+    
     return {
-      horasPorPunto,
-      diasTrabajoPorSprint,
-      horasTotalesPorSprint,
-      horasEfectivasPorSprint,
-      capacidadPuntosPorSprint,
-      velocidadEquipo,
-      numeroSprints,
-      duracionProyectoDias,
-      duracionProyectoSemanas,
-      duracionProyectoMeses,
-      horasTotalesProyecto,
-      costoTotal
+        nivel: riskLevel,
+        factores: riskFactors,
+        recomendaciones: getRecommendations(riskLevel, riskFactors)
     };
-  }, [params]);
+}
 
-  const handleInputChange = (field, value) => {
-    setParams(prev => ({
-      ...prev,
-      [field]: parseFloat(value) || 0
+function getRecommendations(riskLevel, factors) {
+    const recommendations = [];
+    
+    if (riskLevel === 'Alto') {
+        recommendations.push('Considere dividir el proyecto en fases más pequeñas');
+        recommendations.push('Implemente revisiones de estimación más frecuentes');
+        recommendations.push('Planifique buffers de tiempo adicionales');
+    }
+    
+    if (factors.some(f => f.includes('Equipo grande'))) {
+        recommendations.push('Considere dividir en equipos más pequeños');
+        recommendations.push('Mejore la comunicación y coordinación');
+    }
+    
+    if (factors.some(f => f.includes('larga duración'))) {
+        recommendations.push('Realice retrospectivas de estimación cada 3 sprints');
+        recommendations.push('Considere re-planificación a mitad del proyecto');
+    }
+    
+    if (factors.some(f => f.includes('Baja capacidad'))) {
+        recommendations.push('Revise las estimaciones de puntos de historia');
+        recommendations.push('Optimice el factor de eficiencia del equipo');
+    }
+    
+    return recommendations;
+}
+
+// Configuración de almacenamiento local (simulado con variables)
+let savedConfigurations = {};
+
+function saveCurrentConfiguration(name) {
+    const params = scrumCalculator.getInputValues();
+    savedConfigurations[name] = {
+        ...params,
+        fechaGuardado: new Date().toISOString(),
+        nombre: name
+    };
+    
+    // Simular guardado (en un entorno real usarías localStorage)
+    console.log(`Configuración "${name}" guardada:`, savedConfigurations[name]);
+    return true;
+}
+
+function loadConfiguration(name) {
+    const config = savedConfigurations[name];
+    if (!config) {
+        alert('Configuración no encontrada');
+        return false;
+    }
+    
+    // Cargar valores en los inputs
+    Object.keys(config).forEach(key => {
+        if (scrumCalculator.inputs[key]) {
+            scrumCalculator.inputs[key].value = config[key];
+        }
+    });
+    
+    scrumCalculator.calculate();
+    return true;
+}
+
+function listSavedConfigurations() {
+    return Object.keys(savedConfigurations).map(name => ({
+        nombre: name,
+        fecha: savedConfigurations[name].fechaGuardado
     }));
-  };
+}
 
-  const InputField = ({ label, field, value, unit, step = 1, min = 0 }) => (
-    <div className="mb-4">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label}
-      </label>
-      <div className="flex items-center">
-        <input
-          type="number"
-          value={value}
-          onChange={(e) => handleInputChange(field, e.target.value)}
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          step={step}
-          min={min}
-        />
-        {unit && <span className="ml-2 text-gray-500 text-sm">{unit}</span>}
-      </div>
-    </div>
-  );
+// Funciones de validación avanzada
+function validateBusinessRules() {
+    const params = scrumCalculator.getInputValues();
+    const warnings = [];
+    
+    // Validaciones de negocio
+    if (params.horasPorPunto > 8) {
+        warnings.push('⚠️ Tiempo por punto muy alto (>8 horas). Considere dividir las historias.');
+    }
+    
+    if (params.diasSprint > 28) {
+        warnings.push('⚠️ Sprint muy largo (>4 semanas). Se recomienda máximo 4 semanas.');
+    }
+    
+    if (params.horasTrabajoporDia > 8) {
+        warnings.push('⚠️ Horas de trabajo muy altas (>8 horas/día). Considere el burnout del equipo.');
+    }
+    
+    if (params.numeroPersonas > 9) {
+        warnings.push('⚠️ Equipo muy grande (>9 personas). Considere dividir en equipos más pequeños.');
+    }
+    
+    const calculations = scrumCalculator.performCalculations(params);
+    if (calculations.capacidadPuntosPorSprint < 5) {
+        warnings.push('⚠️ Capacidad muy baja por sprint. Revise las estimaciones.');
+    }
+    
+    return warnings;
+}
 
-  const ResultCard = ({ icon: Icon, title, value, description, color = "blue" }) => (
-    <div className={`bg-white rounded-lg border-l-4 border-${color}-500 p-4 shadow-sm`}>
-      <div className="flex items-center mb-2">
-        <Icon className={`h-5 w-5 text-${color}-600 mr-2`} />
-        <h3 className="text-sm font-medium text-gray-900">{title}</h3>
-      </div>
-      <div className={`text-2xl font-bold text-${color}-600 mb-1`}>{value}</div>
-      <p className="text-xs text-gray-600">{description}</p>
-    </div>
-  );
+// Inicialización de la aplicación
+let scrumCalculator;
 
-  return (
-    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Calculadora de Proyecto Scrum
-        </h1>
-        <p className="text-gray-600">
-          Configura los parámetros de tu proyecto y obtén estimaciones automáticas
-        </p>
-      </div>
+document.addEventListener('DOMContentLoaded', function() {
+    scrumCalculator = new ScrumCalculator();
+    
+    // Agregar validaciones adicionales
+    Object.values(scrumCalculator.inputs).forEach(input => {
+        ScrumUtils.addInputValidation(input, ScrumUtils.validatePositiveNumber);
+    });
+    
+    // Mostrar versión y fecha de carga
+    console.log('Calculadora Scrum v1.0 - Cargada:', new Date().toLocaleString());
+});
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Panel de Parámetros */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-            <Calculator className="h-5 w-5 mr-2" />
-            Parámetros del Proyecto
-          </h2>
-
-          <InputField
-            label="Tiempo por punto de historia (horas)"
-            field="horasPorPunto"
-            value={params.horasPorPunto}
-            unit="horas"
-            step={0.5}
-          />
-
-          <InputField
-            label="Duración del sprint"
-            field="diasSprint"
-            value={params.diasSprint}
-            unit="días"
-          />
-
-          <InputField
-            label="Días de trabajo por semana"
-            field="diasPorSemana"
-            value={params.diasPorSemana}
-            unit="días"
-            min={1}
-          />
-
-          <InputField
-            label="Número de personas en el equipo"
-            field="numeroPersonas"
-            value={params.numeroPersonas}
-            unit="personas"
-            min={1}
-          />
-
-          <InputField
-            label="Horas de trabajo por día"
-            field="horasTrabajoporDia"
-            value={params.horasTrabajoporDia}
-            unit="horas/día"
-            step={0.5}
-          />
-
-          <InputField
-            label="Total de puntos de historia del proyecto"
-            field="puntosProyecto"
-            value={params.puntosProyecto}
-            unit="puntos"
-          />
-
-          <InputField
-            label="Costo por hora por persona (USD)"
-            field="costoHoraPorPersona"
-            value={params.costoHoraPorPersona}
-            unit="USD/hora"
-            step={0.5}
-          />
-        </div>
-
-        {/* Panel de Resultados */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-              <Target className="h-5 w-5 mr-2" />
-              Resultados del Cálculo
-            </h2>
-
-            <div className="grid grid-cols-1 gap-4">
-              <ResultCard
-                icon={Clock}
-                title="Tiempo por punto de historia"
-                value={`${calculations.horasPorPunto} horas`}
-                description="Tiempo estimado para completar 1 punto"
-                color="blue"
-              />
-
-              <ResultCard
-                icon={Clock}
-                title="Duración del sprint"
-                value={`${params.diasSprint} días`}
-                description={`${calculations.diasTrabajoPorSprint} días laborables`}
-                color="green"
-              />
-
-              <ResultCard
-                icon={Users}
-                title="Días de trabajo por semana"
-                value={`${params.diasPorSemana} días`}
-                description="Días laborables por semana"
-                color="purple"
-              />
-
-              <ResultCard
-                icon={Users}
-                title="Tamaño del equipo"
-                value={`${params.numeroPersonas} personas`}
-                description="Miembros del equipo de desarrollo"
-                color="indigo"
-              />
-
-              <ResultCard
-                icon={Target}
-                title="Total puntos del proyecto"
-                value={`${params.puntosProyecto} puntos`}
-                description="Complejidad total estimada"
-                color="red"
-              />
-
-              <ResultCard
-                icon={Target}
-                title="Capacidad por sprint"
-                value={`${calculations.capacidadPuntosPorSprint} puntos`}
-                description={`${calculations.horasEfectivasPorSprint} horas efectivas`}
-                color="yellow"
-              />
-
-              <ResultCard
-                icon={Target}
-                title="Velocidad del equipo"
-                value={`${calculations.velocidadEquipo} puntos/sprint`}
-                description="Puntos completados por sprint"
-                color="pink"
-              />
-
-              <ResultCard
-                icon={Calculator}
-                title="Sprints necesarios"
-                value={`${calculations.numeroSprints} sprints`}
-                description="Total de iteraciones requeridas"
-                color="teal"
-              />
-
-              <ResultCard
-                icon={Clock}
-                title="Duración del proyecto"
-                value={`${calculations.duracionProyectoMeses} meses`}
-                description={`${calculations.duracionProyectoSemanas} semanas (${calculations.duracionProyectoDias} días)`}
-                color="orange"
-              />
-
-              <ResultCard
-                icon={DollarSign}
-                title="Costo total del proyecto"
-                value={`$${calculations.costoTotal.toLocaleString()}`}
-                description={`${calculations.horasTotalesProyecto} horas totales`}
-                color="emerald"
-              />
-            </div>
-          </div>
-
-          {/* Resumen Ejecutivo */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
-            <h3 className="text-lg font-semibold mb-4">📋 Resumen Ejecutivo</h3>
-            <div className="space-y-2 text-sm">
-              <p>• El proyecto requiere <strong>{calculations.numeroSprints} sprints</strong> de {params.diasSprint} días cada uno</p>
-              <p>• Duración total estimada: <strong>{calculations.duracionProyectoMeses} meses</strong></p>
-              <p>• Capacidad del equipo: <strong>{calculations.capacidadPuntosPorSprint} puntos por sprint</strong></p>
-              <p>• Costo total estimado: <strong>${calculations.costoTotal.toLocaleString()}</strong></p>
-              <p>• Factor de eficiencia aplicado: <strong>80%</strong> (tiempo efectivo en desarrollo)</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <h4 className="text-yellow-800 font-medium mb-2">💡 Consideraciones importantes:</h4>
-        <ul className="text-yellow-700 text-sm space-y-1">
-          <li>• Los cálculos incluyen un factor de eficiencia del 80% para tiempo efectivo de desarrollo</li>
-          <li>• Las estimaciones pueden variar según la complejidad real de las historias</li>
-          <li>• Es recomendable revisar y ajustar las estimaciones después de los primeros sprints</li>
-          <li>• Los costos no incluyen gastos adicionales como infraestructura, herramientas, etc.</li>
-        </ul>
-      </div>
-    </div>
-  );
+// Funciones globales para uso externo
+window.ScrumCalculatorAPI = {
+    exportToJSON,
+    exportToCSV,
+    printResults,
+    loadSmallTeamPreset,
+    loadMediumTeamPreset,
+    loadLargeTeamPreset,
+    analyzeProjectRisk,
+    validateBusinessRules,
+    saveCurrentConfiguration,
+    loadConfiguration,
+    listSavedConfigurations
 };
-
-export default ScrumCalculator;
